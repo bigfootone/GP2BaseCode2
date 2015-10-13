@@ -187,6 +187,13 @@ int main(int argc, char * arg[])
     // Create an OpenGL context associated with the window.
     SDL_GLContext glcontext = SDL_GL_CreateContext(window);
 
+	int	imageInitFlags = IMG_INIT_JPG | IMG_INIT_PNG;
+	int	returnInitFlags = IMG_Init(imageInitFlags);
+	if (((returnInitFlags) & (imageInitFlags)) != imageInitFlags)
+	{
+		cout << "ERROR SDL_IMAGE Init" << IMG_GetError() << endl;
+	}
+
     //Call our InitOpenGL Function
     initOpenGL();
     //Set our viewport
@@ -234,6 +241,7 @@ int main(int argc, char * arg[])
     cleanUp();
     SDL_GL_DeleteContext(glcontext);
     SDL_DestroyWindow(window);
+	IMG_Quit();
     SDL_Quit();
 
     return 0;
