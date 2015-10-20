@@ -2,36 +2,45 @@
 #include "Graphics.h"
 #include "Vertices.h"
 #include "Shader.h"
+#include "Texture.h"
 
 Vertex verts[]={
 //Front
 { vec3(-0.5f, 0.5f, 0.5f),
-    vec4(1.0f, 0.0f, 1.0f, 1.0f) },// Top Left
+    vec4(1.0f, 0.0f, 1.0f, 1.0f),
+	vec2(0.0f, 0.0f)},// Top Left
 
 { vec3(-0.5f, -0.5f, 0.5f),
-    vec4(1.0f, 1.0f, 0.0f, 1.0f) },// Bottom Left
+    vec4(1.0f, 1.0f, 0.0f, 1.0f),
+	vec2(0.0f, 1.0f) },// Bottom Left
 
 { vec3(0.5f, -0.5f, 0.5f),
-    vec4(0.0f, 1.0f, 1.0f, 1.0f) }, //Bottom Right
+    vec4(0.0f, 1.0f, 1.0f, 1.0f),
+	vec2(1.0f, 1.0f) }, //Bottom Right
 
 { vec3(0.5f, 0.5f, 0.5f),
-    vec4(1.0f, 0.0f, 1.0f, 1.0f) },// Top Right
+    vec4(1.0f, 0.0f, 1.0f, 1.0f),
+	vec2(1.0f, 0.0f) },// Top Right
 
 
 //back
 { vec3(-0.5f, 0.5f, -0.5f),
-    vec4(1.0f, 0.0f, 1.0f, 1.0f) },// Top Left
+    vec4(1.0f, 0.0f, 1.0f, 1.0f),
+	vec2(0.0f, 0.0f) },// Top Left
 
 { vec3(-0.5f, -0.5f, -0.5f),
-    vec4(1.0f, 1.0f, 0.0f, 1.0f) },// Bottom Left
+    vec4(1.0f, 1.0f, 0.0f, 1.0f),
+	vec2(0.0f, 1.0f) },// Bottom Left
 
 { vec3(0.5f, -0.5f, -0.5f),
-    vec4(0.0f, 1.0f, 1.0f, 1.0f) }, //Bottom Right
+    vec4(0.0f, 1.0f, 1.0f, 1.0f),
+	vec2(1.0f, 1.0f) }, //Bottom Right
 
 { vec3(0.5f, 0.5f, -0.5f),
-    vec4(1.0f, 0.0f, 1.0f, 1.0f) },// Top Right
+    vec4(1.0f, 0.0f, 1.0f, 1.0f),
+	vec2(1.0f, 0.0f) },// Top Right
 
-};
+}; 
 
 GLuint indices[]={
     //front
@@ -69,9 +78,33 @@ GLuint VBO;
 GLuint EBO;
 GLuint VAO;
 GLuint shaderProgram;
+GLuint fontTexture;
+
+GLuint textureMap;
 
 void initScene()
 {
+	////load texture and bind
+	//string texturePath = ASSET_PATH + TEXTURE_PATH + "/texture.png";
+	//textureMap = loadTextureFromFile(texturePath);
+
+	//glBindTexture(GL_TEXTURE_2D, textureMap);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	//glGenerateMipmap(GL_TEXTURE_2D);
+
+	textureMap = loadTextureFromFont("/OratorStd.otf", 18, "Hello World");
+
+	glBindTexture(GL_TEXTURE_2D, textureMap);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+
+
   //Generate Vertex Array
   glGenVertexArrays(1,&VAO);
   glBindVertexArray( VAO );
@@ -93,6 +126,9 @@ void initScene()
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void**)(sizeof(vec3)));
 
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void**)(sizeof(vec2)));
+
   GLuint vertexShaderProgram=0;
   string vsPath = ASSET_PATH + SHADER_PATH + "/simpleColourVS.glsl";
   vertexShaderProgram = loadShaderFromFile(vsPath, VERTEX_SHADER);
@@ -110,6 +146,7 @@ void initScene()
   //Link attributes
   glBindAttribLocation(shaderProgram, 0, "vertexPosition");
   glBindAttribLocation(shaderProgram, 1, "vertexColour");
+  glBindAttribLocation(shaderProgram, 2, "vertexTexCoords");
 
   glLinkProgram(shaderProgram);
   checkForLinkErrors(shaderProgram);
@@ -120,6 +157,7 @@ void initScene()
 
 void cleanUp()
 {
+	glDeleteTextures(1, &textureMap);
   glDeleteProgram(shaderProgram);
   glDeleteBuffers(1, &EBO);
   glDeleteBuffers(1, &VBO);
@@ -146,9 +184,14 @@ void render()
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     glUseProgram(shaderProgram);
-
     GLint MVPLocation = glGetUniformLocation(shaderProgram, "MVP");
+	GLint texture0Location = glGetUniformLocation(shaderProgram, "texture0");
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fontTexture);
+
     glUniformMatrix4fv(MVPLocation, 1, GL_FALSE, glm::value_ptr(MVPMatrix));
+	glUniform1i(texture0Location, 0);
 
     glBindVertexArray( VAO );
 
@@ -192,6 +235,11 @@ int main(int argc, char * arg[])
 	if (((returnInitFlags) & (imageInitFlags)) != imageInitFlags)
 	{
 		cout << "ERROR SDL_IMAGE Init" << IMG_GetError() << endl;
+	}
+
+	if (TTF_Init() == -1)
+	{
+		std::cout << "ERROR TTF_Init:" << TTF_GetError();
 	}
 
     //Call our InitOpenGL Function
@@ -242,6 +290,7 @@ int main(int argc, char * arg[])
     SDL_GL_DeleteContext(glcontext);
     SDL_DestroyWindow(window);
 	IMG_Quit();
+	TTF_Quit();
     SDL_Quit();
 
     return 0;
